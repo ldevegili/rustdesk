@@ -20,6 +20,7 @@ import '../../models/platform_model.dart';
 import '../../common/shared_state.dart';
 import '../../utils/image.dart';
 import '../widgets/remote_toolbar.dart';
+import '../widgets/monitor_panel.dart';
 import '../widgets/kb_layout_type_chooser.dart';
 import '../widgets/tabbar_widget.dart';
 import 'macos_full_screen_focus_recovery.dart';
@@ -125,6 +126,8 @@ class _RemotePageState extends State<RemotePage>
   // to identify the toolbar instance and its callback function.
   int? _instanceIdOnEnterOrLeaveImage4Toolbar;
   Function(bool)? _onEnterOrLeaveImage4Toolbar;
+  int? _instanceIdOnEnterOrLeaveImage4MonitorPanel;
+  Function(bool)? _onEnterOrLeaveImage4MonitorPanel;
 
   late FFI _ffi;
   Worker? _waylandKeyboardModeWorker;
@@ -766,6 +769,23 @@ class _RemotePageState extends State<RemotePage>
                             ));
                       }
                     }(),
+              // Below the toolbar so its menus win when they overlap the panel.
+              Obx(() => _ffi.inputModel.relativeMouseMode.value
+                  ? const Offstage()
+                  : MonitorPanel(
+                      id: widget.id,
+                      ffi: _ffi,
+                      onEnterOrLeaveImageSetter: (id, func) {
+                        _instanceIdOnEnterOrLeaveImage4MonitorPanel = id;
+                        _onEnterOrLeaveImage4MonitorPanel = func;
+                      },
+                      onEnterOrLeaveImageCleaner: (id) {
+                        if (_instanceIdOnEnterOrLeaveImage4MonitorPanel == id) {
+                          _instanceIdOnEnterOrLeaveImage4MonitorPanel = null;
+                          _onEnterOrLeaveImage4MonitorPanel = null;
+                        }
+                      },
+                    )),
               // Use Overlay to enable rebuild every time on menu button click.
               // Hide toolbar when relative mouse mode is active to prevent
               // cursor from escaping to toolbar area.
@@ -843,6 +863,7 @@ class _RemotePageState extends State<RemotePage>
         //
       }
     }
+    _onEnterOrLeaveImage4MonitorPanel?.call(true);
 
     // See [onWindowBlur].
     if (isMacOS) {
@@ -882,6 +903,7 @@ class _RemotePageState extends State<RemotePage>
         //
       }
     }
+    _onEnterOrLeaveImage4MonitorPanel?.call(false);
 
     // See [onWindowBlur].
     if (isMacOS) {

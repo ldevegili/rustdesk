@@ -22,6 +22,7 @@ import '../../models/platform_model.dart';
 import '../../common/shared_state.dart';
 import './popup_menu.dart';
 import './kb_layout_type_chooser.dart';
+import './monitor_panel.dart';
 import 'package:flutter_hbb/utils/scale.dart';
 import 'package:flutter_hbb/common/widgets/custom_scale_base.dart';
 
@@ -1116,8 +1117,23 @@ class _MonitorMenu extends StatelessWidget {
         Row(children: buildMonitorList(context, false)),
         supportIndividualWindows ? Divider() : Offstage(),
         supportIndividualWindows ? chooseDisplayBehavior() : Offstage(),
+        if (ffi.connType == ConnType.defaultConn) ...[
+          if (!supportIndividualWindows) Divider(),
+          showMonitorPanelOption(),
+        ],
       ],
     );
+  }
+
+  Widget showMonitorPanelOption() {
+    return CkbMenuButton(
+        value: isMonitorPanelEnabled(),
+        onChanged: (value) async {
+          if (value == null) return;
+          await setMonitorPanelEnabled(value);
+        },
+        ffi: ffi,
+        child: Text(translate('Show floating monitor panel')));
   }
 
   Widget chooseDisplayBehavior() {
